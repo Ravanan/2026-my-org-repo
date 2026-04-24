@@ -1,0 +1,11 @@
+.mvn/
+target/
+.git
+.idea
+*.iml
+**/node_modules
+Dockerfile.*
+*.log
+/.classpath
+/.project
+/.settings
