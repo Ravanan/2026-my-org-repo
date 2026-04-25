@@ -29,9 +29,8 @@ pipeline {
     stage('Build (Maven)') {
       steps {
         // Use a Maven Docker image to run the build; this avoids requiring Maven on the agent
-        script {
-		  docker pull maven:3.10.1-eclipse-temurin-17
-          docker.image('maven:3.10.1-eclipse-temurin-17').inside('-v $HOME/.m2:/root/.m2') {
+        script {		
+          docker.image('maven:3.9.15-eclipse-temurin-17').inside('-v $HOME/.m2:/root/.m2') {
             sh 'mvn -B -DskipTests=false clean package'
           }
         }
