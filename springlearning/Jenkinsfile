@@ -1,0 +1,122 @@
+// Declarative Jenkins pipeline for build, docker image push, and remote deploy
+// Place this file at the repo root. Update the environment variables and
+// credential IDs below to match your Jenkins configuration.
+
+pipeline {
+  agent any
+
+  environment {
+    // IMAGE_NAME will be tagged as <registry>/<name>:<buildNumber> when DOCKER_REGISTRY is set
+    APP_NAME = 'springlearning'
+    IMAGE_NAME = "${APP_NAME}:${env.BUILD_NUMBER}"
+    DOCKER_REGISTRY = 'docker.io/mailravan' // e.g. myregistry.example.com (leave empty to skip push)
+    // Credentials (create these in Jenkins and set the IDs here)
+    DOCKER_CREDENTIALS_ID = 'docker-registry-cred'    // usernamePassword credential for registry
+    
+     // Deployment-related (leave empty if you’re not deploying yet)
+    DEPLOY_SSH_CREDENTIALS_ID = //'deploy-server-ssh'   // SSH Username with private key
+    // Remote deploy target (set in Jenkins job config or here)
+    DEPLOY_HOST = ''   // e.g. 192.0.2.10
+    DEPLOY_USER = ''   // e.g. ubuntu
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build (Maven)') {
+      steps {
+        // Use a Maven Docker image to run the build; this avoids requiring Maven on the agent
+        script {
+          docker.image('maven:3.10.1-eclipse-temurin-17').inside('-v $HOME/.m2:/root/.m2') {
+            sh 'mvn -B -DskipTests=false clean package'
+          }
+        }
+      }
+    }
+
+    stage('Archive artifact') {
+      steps {
+        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+      }
+    }
+
+    stage('Build Docker image') {
+      when {
+        expression { return fileExists('Dockerfile') }
+      }
+      steps {
+        script {
+          // If DOCKER_REGISTRY is set, tag with registry prefix
+          def fullImage = env.DOCKER_REGISTRY ? "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}" : env.IMAGE_NAME
+          sh "docker build -t ${fullImage} ."
+          // set variable for later stages
+          env.IMAGE_TO_PUSH = fullImage
+        }
+      }
+    }
+
+    stage('Push Docker image') {
+      when {
+        allOf {
+          expression { return env.DOCKER_REGISTRY != null && env.DOCKER_REGISTRY != '' }
+          expression { return env.IMAGE_TO_PUSH != null }
+        }
+      }
+      steps {
+        withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS_ID, usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+          sh '''
+            echo $REG_PASS | docker login ${DOCKER_REGISTRY} -u $REG_USER --password-stdin
+            docker push ${IMAGE_TO_PUSH}
+            docker logout ${DOCKER_REGISTRY}
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to remote host') {
+      when {
+        expression { return env.DEPLOY_HOST != null && env.DEPLOY_HOST != '' }
+      }
+      steps {
+        // Use the SSH private key credential stored in Jenkins
+        withCredentials([sshUserPrivateKey(credentialsId: env.DEPLOY_SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+          script {
+            def image = env.IMAGE_TO_PUSH ?: env.IMAGE_NAME
+            // Build the remote deploy command: pull image, stop existing container, run new one
+            def remoteCmd = "docker pull ${image} || true; docker rm -f ${APP_NAME} || true; docker run -d --name ${APP_NAME} -p 8082:8082 --restart unless-stopped ${image}"
+
+            sh "chmod 600 ${SSH_KEY}"
+            // Note: we disable strict host key checking here for simplicity. For production, manage known_hosts properly.
+            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${DEPLOY_USER}@${DEPLOY_HOST} '${remoteCmd}'"
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      cleanWs()
+    }
+    success {
+      echo "Pipeline succeeded"
+    }
+    failure {
+      echo "Pipeline failed"
+    }
+  }
+}
+
+// IMPORTANT:
+// - Configure the following in Jenkins (Credentials & Job configuration):
+//   * Create a 'Username with password' credential for Docker registry and set DOCKER_CREDENTIALS_ID.
+//   * Create an 'SSH Username with private key' credential for the deploy server and set DEPLOY_SSH_CREDENTIALS_ID.
+//   * Set DOCKER_REGISTRY, DEPLOY_HOST and DEPLOY_USER either here in the file or in the Jenkins job environment.
+// - The Jenkins agent must have Docker installed and be able to run `docker` (or mount the Docker socket into the agent).
+// - This pipeline uses a Maven Docker image to run `mvn` but uses the host `docker` to build/push images.
+// - If you prefer not to push images, leave DOCKER_REGISTRY empty and the Deploy stage will still use the locally-built image name,
+//   but the remote host must be able to access that image (or you must push it to a registry).
