@@ -8,13 +8,12 @@ pipeline {
   environment {
     // IMAGE_NAME will be tagged as <registry>/<name>:<buildNumber> when DOCKER_REGISTRY is set
     APP_NAME = 'springlearning'
-    IMAGE_NAME = "${APP_NAME}:${env.BUILD_NUMBER}"
     DOCKER_REGISTRY = 'docker.io/mailravan' // e.g. myregistry.example.com (leave empty to skip push)
     // Credentials (create these in Jenkins and set the IDs here)
     DOCKER_CREDENTIALS_ID = 'docker-registry-cred'    // usernamePassword credential for registry
     
      // Deployment-related (leave empty if you’re not deploying yet)
-    DEPLOY_SSH_CREDENTIALS_ID = //'deploy-server-ssh'   // SSH Username with private key
+    DEPLOY_SSH_CREDENTIALS_ID = ''   // SSH Username with private key (set the credential ID here)
     // Remote deploy target (set in Jenkins job config or here)
     DEPLOY_HOST = ''   // e.g. 192.0.2.10
     DEPLOY_USER = ''   // e.g. ubuntu
@@ -50,8 +49,9 @@ pipeline {
       }
       steps {
         script {
-          // If DOCKER_REGISTRY is set, tag with registry prefix
-          def fullImage = env.DOCKER_REGISTRY ? "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}" : env.IMAGE_NAME
+          // Compute image name using APP_NAME and BUILD_NUMBER (do not try to interpolate env vars in environment block)
+          def localImage = "${env.APP_NAME}:${env.BUILD_NUMBER}"
+          def fullImage = env.DOCKER_REGISTRY && env.DOCKER_REGISTRY.trim() ? "${env.DOCKER_REGISTRY}/${localImage}" : localImage
           sh "docker build -t ${fullImage} ."
           // set variable for later stages
           env.IMAGE_TO_PUSH = fullImage
