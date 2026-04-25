@@ -22,7 +22,8 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        git branch: 'main',
+        url: 'https://github.com/Ravanan/2026-my-org-repo.git'
       }
     }
 
