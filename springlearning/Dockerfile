@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for building and running the Spring Boot application
 # Stage 1: build with Maven
-FROM maven:3.10.1-eclipse-temurin-17 AS build
+FROM maven:3.9.15-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # Copy only the files needed for a Maven build to leverage layer caching
