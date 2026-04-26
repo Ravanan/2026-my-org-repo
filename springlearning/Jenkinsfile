@@ -32,7 +32,10 @@ pipeline {
         // Use a Maven Docker image to run the build; this avoids requiring Maven on the agent
         script {		
           docker.image('maven:3.9.15-eclipse-temurin-17').inside('-v $HOME/.m2:/root/.m2') {
-            sh 'mvn -B -DskipTests=false clean package'
+			dir('springlearning')
+			{
+         	   sh 'mvn -B -DskipTests=false clean package'
+            }
           }
         }
       }
@@ -40,20 +43,20 @@ pipeline {
 
     stage('Archive artifact') {
       steps {
-        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+        archiveArtifacts artifacts: 'springlearning/target/*.jar', fingerprint: true
       }
     }
 
     stage('Build Docker image') {
       when {
-        expression { return fileExists('Dockerfile') }
+        expression { return fileExists('springlearning/Dockerfile') || fileExists('Dockerfile') }
       }
       steps {
         script {
           // Compute image name using APP_NAME and BUILD_NUMBER (do not try to interpolate env vars in environment block)
           def localImage = "${env.APP_NAME}:${env.BUILD_NUMBER}"
           def fullImage = env.DOCKER_REGISTRY && env.DOCKER_REGISTRY.trim() ? "${env.DOCKER_REGISTRY}/${localImage}" : localImage
-          sh "docker build -t ${fullImage} ."
+          sh "docker build -t ${fullImage} springlearning"
           // set variable for later stages
           env.IMAGE_TO_PUSH = fullImage
         }
