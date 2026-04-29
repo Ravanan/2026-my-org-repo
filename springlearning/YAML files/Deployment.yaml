@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springlearning-deployment
+  namespace: springlearning
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: springlearning
+  template:
+    metadata:
+      labels:
+        app: springlearning
+    spec:
+      containers:
+      - name: springlearning
+        image: mailravan/springlearning:latest
+        ports:
+        - containerPort: 8080
