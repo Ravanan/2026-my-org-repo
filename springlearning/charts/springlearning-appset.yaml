@@ -1,7 +1,36 @@
-source:
-  repoURL: https://github.com/Ravanan/2026-my-org-repo.git
-  targetRevision: main
-  path: springlearning/charts
-  helm:
-    valueFiles:
-      - values-dev.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: springlearning-appset
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: dev-namespace
+            values: values-dev.yaml
+          - env: staging
+            namespace: staging-namespace
+            values: values-staging.yaml
+          - env: prod
+            namespace: prod-namespace
+            values: values-prod.yaml
+  template:
+    metadata:
+      name: '{{env}}-springlearning'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+        targetRevision: main
+        path: springlearning/charts
+        helm:
+          valueFiles:
+            - '{{values}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
