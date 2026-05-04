@@ -1,1 +1,7 @@
-
+source:
+  repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+  targetRevision: main
+  path: springlearning/charts
+  helm:
+    valueFiles:
+      - values-dev.yaml
