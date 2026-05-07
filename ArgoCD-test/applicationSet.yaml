@@ -1,1 +1,28 @@
 
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: springlearning-appset
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+        revision: main
+        directories:
+          - path: springlearning/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
