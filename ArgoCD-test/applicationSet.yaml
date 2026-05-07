@@ -13,7 +13,7 @@ spec:
             namespace: springlearning-prod   
   template:
     metadata:
-      name: '{{cluster}}-{{namespace}}-springlearningApp'
+      name: '{{cluster}}-{{namespace}}-springlearningapp'
     spec:
       project: default
       source:
