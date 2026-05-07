@@ -1,1 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: guestbook-applicationset
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: in-cluster
+            namespace: guestbook-dev
+          - cluster: in-cluster
+            namespace: guestbook-prod
+  template:
+    metadata:
+      name: '{{cluster}}-{{namespace}}-guestbook'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/argoproj/argocd-example-apps.git
+        targetRevision: HEAD
+        path: guestbook
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
 
