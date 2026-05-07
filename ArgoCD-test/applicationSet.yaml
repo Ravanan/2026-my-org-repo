@@ -18,7 +18,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/Ravanan/2026-my-org-repo.git
-        targetRevision: HEAD
+        targetRevision: main
         path: springlearning/charts
       destination:
         server: https://kubernetes.default.svc
