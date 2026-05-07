@@ -5,20 +5,21 @@ metadata:
   name: springlearning-appset
 spec:
   generators:
-    - git:
-        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
-        revision: main
-        directories:
-          - path: springlearning/*
+   - list:
+        elements:
+          - cluster: in-cluster
+            namespace: springlearning-dev
+          - cluster: in-cluster
+            namespace: springlearning-prod   
   template:
     metadata:
-      name: '{{path.basename}}'
+      name: '{{cluster}}-{{namespace}}-springlearningApp'
     spec:
       project: default
       source:
         repoURL: https://github.com/Ravanan/2026-my-org-repo.git
         targetRevision: main
-        path: '{{path}}'
+        path: springlearning/charts
       destination:
         server: https://kubernetes.default.svc
         namespace: default
