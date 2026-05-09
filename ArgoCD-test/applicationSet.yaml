@@ -8,8 +8,6 @@ spec:
    - list:
         elements:
           - cluster: in-cluster
-            namespace: springlearning-dev
-          - cluster: in-cluster
             namespace: springlearning-prod   
   template:
     metadata:
