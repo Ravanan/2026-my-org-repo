@@ -1,1 +1,30 @@
 
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: springlearning-appset
+spec:
+  generators:
+   - list:
+        elements:
+          - cluster: in-cluster
+            namespace: springlearning-dev
+          - cluster: in-cluster
+            namespace: springlearning-prod   
+  template:
+    metadata:
+      name: '{{cluster}}-{{namespace}}-springlearningapp'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+        targetRevision: main
+        path: springlearning/yaml-files
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
