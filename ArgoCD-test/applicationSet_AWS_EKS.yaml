@@ -1,1 +1,29 @@
 
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: springlearning-appset-eks
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+        revision: main
+        directories:
+          - path: springlearning/overlays/dev   # or springlearning/env/dev
+          - path: springlearning/overlays/prod  # or springlearning/env/prod
+  template:
+    metadata:
+      name: '{{path.basename}}-springlearningapp-eks'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Ravanan/2026-my-org-repo.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://DE1BBFF3E76DFABE01F589A9E47A9E29.gr7.eu-north-1.eks.amazonaws.com
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
