@@ -1,8 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: springlearning-deployment
-  namespace: springlearning
+  name: springlearning-deployment  
 spec:
   replicas: 2
   selector:
