@@ -1,5 +1,5 @@
 resources:
   - ../../base
   - ingress.yaml
-namespace: springlearning-prod
+namespace: prod
 
