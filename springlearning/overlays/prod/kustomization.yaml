@@ -2,4 +2,5 @@ resources:
   - ../../base
   - ingress.yaml
 namespace: prod
-
+patchesStrategicMerge:
+  - patch-deployment.yaml
